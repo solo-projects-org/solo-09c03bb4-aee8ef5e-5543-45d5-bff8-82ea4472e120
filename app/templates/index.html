@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>电视台字幕归档</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="top">
+    <h1>电视台字幕归档</h1>
+    <span class="sub">按播出 UTC 时间定位 · 查已取字幕 · 标出未采到的片段</span>
+  </header>
+
+  <main>
+    <section class="panel">
+      <div class="row">
+        <div class="tabs" id="tabs"></div>
+        <span style="flex:1"></span>
+        <button class="btn" id="capture-all" title="依次采集所有频道">采集全部频道</button>
+        <button class="btn primary" id="capture">采集本频道</button>
+      </div>
+
+      <form class="row" id="range-form" style="margin-top:14px">
+        <label class="field">
+          起始 UTC
+          <input type="text" id="from" placeholder="2026-11-20T00:00:00Z" autocomplete="off">
+        </label>
+        <label class="field">
+          结束 UTC
+          <input type="text" id="to" placeholder="2026-11-20T00:30:00Z" autocomplete="off">
+        </label>
+        <button class="btn" type="submit">查档</button>
+        <button class="btn" type="button" id="range-clear">全时段</button>
+        <span class="hint">留空即覆盖该频道全部已见时段；时间按 UTC（结尾 Z）解释。</span>
+      </form>
+      <div class="row"><span class="hint" id="range-meta"></span></div>
+    </section>
+
+    <section class="panel">
+      <div class="cards" id="cards"></div>
+    </section>
+
+    <section class="panel">
+      <p class="section-title">片段状态（按播出顺序；空字幕也算已取）</p>
+      <div class="strip" id="strip"></div>
+      <div class="legend">
+        <span><i style="background:var(--ok)"></i>已取</span>
+        <span><i style="background:var(--empty)"></i>已取·空字幕</span>
+        <span><i style="background:var(--pending)"></i>待补（已见未取）</span>
+        <span><i style="background:var(--missing)"></i>缺失（滑出窗口仍未取）</span>
+      </div>
+    </section>
+
+    <section class="panel">
+      <p class="section-title">连续覆盖段（同一连续段内才合并跨片字幕）</p>
+      <div class="runs" id="runs"></div>
+    </section>
+
+    <section class="panel">
+      <p class="section-title">未采到的片段</p>
+      <div id="gaps"></div>
+    </section>
+
+    <section class="panel">
+      <p class="section-title">已归档字幕（UTC）</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:24%">起止 UTC</th>
+              <th>文字</th>
+              <th style="width:14%">来源片段</th>
+            </tr>
+          </thead>
+          <tbody id="cue-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel demo">
+      <div class="title" style="margin-bottom:10px">
+        <span class="dot"></span>
+        <strong>演示源控制</strong>
+        <span class="hint">本地面板，仅用于演示与自测；对实际播出源无效。</span>
+      </div>
+      <div class="row">
+        <button class="btn" id="demo-advance-1">推进 1 片</button>
+        <button class="btn" id="demo-advance-8">推进 8 片（滑出窗口）</button>
+        <button class="btn" id="demo-gap-add">让下一片取片失败</button>
+        <button class="btn" id="demo-gap-heal">恢复全部缺口</button>
+        <button class="btn" id="demo-stale">返回旧列表（-8 片）</button>
+        <button class="btn" id="demo-stale-clear">恢复实时列表</button>
+        <label class="field" style="flex-direction:row;align-items:center;gap:6px">
+          取片延迟(秒)
+          <input type="number" id="demo-latency" min="0" max="30" step="0.5" value="0">
+        </label>
+      </div>
+      <div class="row"><span class="hint" id="demo-state"></span></div>
+      <div class="row">
+        <span class="hint">“让下一片取片失败”作用于下一个进窗口的片段：取片返回 404（视为未采到），推进窗口并采集后标为待补，滑出窗口后标为缺失；“恢复全部缺口”后再采集即为迟到补齐。推进窗口与失败/恢复都会自动跟随一次采集。</span>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast"></div>
+  <script src="/static/app.js"></script>
+</body>
+</html>

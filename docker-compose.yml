@@ -1,0 +1,45 @@
+services:
+  origin:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["uvicorn", "origin.server:app", "--host", "0.0.0.0", "--port", "8001"]
+    ports:
+      - "8001:8001"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8001/healthz')"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command:
+      - uvicorn
+      - app.main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+    environment:
+      ARCHIVE_DB: /data/archive.sqlite3
+      ORIGIN_BASE_URL: http://origin:8001
+      ORIGIN_TIMEOUT_S: "15"
+      CHANNEL_CONFIG: "news|新闻综合|http://origin:8001/channel/news/master.m3u8,sports|体育赛事|http://origin:8001/channel/sports/master.m3u8"
+    ports:
+      - "8000:8000"
+    volumes:
+      - archive-data:/data
+    depends_on:
+      origin:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/healthz')"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  archive-data:
